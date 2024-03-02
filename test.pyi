@@ -2,118 +2,120 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import mean_squared_error
 import numpy as np
 from sklearn.svm import LinearSVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.neural_network import MLPRegressor
 
 # load database function
 def load_data(file_name):
     return np.loadtxt("datasets/tictac_" + file_name + ".txt")
 
-
+### DATASETS
 final_bc = load_data("final")
 multi_bc = load_data("multi")
 single_bc = load_data("single")
 
 
-def evaluate_classifier(classifier, X, y):
-    """
-    Function to evaluate a classifier using given data.
+def evaluate_classifier(classifier, data, dn):
 
-    Args:
-    classifier: The classifier object.
-    X: The feature matrix.
-    y: The target vector.
+    print("Evaluating classifer for " + dn + " dataset")
 
-    Returns:
-    accuracy: The accuracy score.
-    conf_matrix: The confusion matrix.
-    cv_scores: The cross-validation scores.
-    """
+    # Extract features (X) and labels (y)
+    X = data[:, :9]
+    y = data[:, 9]
+    
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
+    
+    # train
     classifier.fit(X_train, y_train)
-
-    # O X O
-    # O O X 
-    #  X X
 
     # Predict the optimal moves for the entire dataset
     y_pred = classifier.predict(X_test)
-    print(X_test[0])
-    print(y_pred[0])
 
-    # Convert the predicted moves into row and column indices
-    # Note: This conversion logic depends on how your Tic Tac Toe board is represented
-    # Here's a simple example assuming a 3x3 board represented as a 2D array
-    # You may need to adjust this based on your actual implementation
-    row, col = divmod(y_pred[0], 3)  # Assuming y_pred contains a single prediction
+    # Calculate accuracy
+    accuracy = accuracy_score(y_test, y_pred)
 
-    # for label in y_pred:
-    #     print(label)
+    # Generate confusion matrix
+    conf_matrix = confusion_matrix(y_test, y_pred)
 
-    return row, col
-    # # Split the dataset into training and testing sets
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Perform k-fold cross-validation
+    cv_scores = cross_val_score(classifier, X, y, cv=10)
 
-    # # Train the classifier on the training data
-    # classifier.fit(X_train, y_train)
+    # Print results
+    print("Accuracy:", accuracy)
+    print("Confusion Matrix:")
+    print(conf_matrix)
+    print("Cross-validation scores:", cv_scores)
+    print("Mean accuracy:", np.mean(cv_scores))
 
-    # # Predict the optimal moves for the O player on the test data
-    # y_pred = classifier.predict(X_test)
-    # print(y_pred)
+    return classifier
 
-    # # Calculate accuracy
-    # accuracy = accuracy_score(y_test, y_pred)
+def evaluate_regressor(regressor, data, dataset_name):
+    print("Evaluating regressor for " + dataset_name + " dataset")
 
-    # # Generate confusion matrix
-    # conf_matrix = confusion_matrix(y_test, y_pred)
+    # Extract features (X) and labels (y)
+    X = data[:, :9]
+    y = data[:, 9]
 
-    # # Perform k-fold cross-validation
-    # cv_scores = cross_val_score(classifier, X, y, cv=10)
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # # Print results
-    # print("Accuracy:", accuracy)
-    # print("Confusion Matrix:")
-    # print(conf_matrix)
-    # print("Cross-validation scores:", cv_scores)
-    # print("Mean accuracy:", np.mean(cv_scores))
+    # Train the regressor
+    regressor.fit(X_train, y_train)
+
+    # Predict on the test set
+    y_pred = regressor.predict(X_test)
+
+    # Calculate mean squared error
+    mse = mean_squared_error(y_test, y_pred)
+
+    # Perform k-fold cross-validation
+    cv_mse_scores = -cross_val_score(regressor, X, y, cv=10, scoring='neg_mean_squared_error')
+
+    # Print results
+    print("Mean Squared Error:", mse)
+    print("Cross-validation MSE scores:", cv_mse_scores)
+    print("Mean Cross-validation MSE:", np.mean(cv_mse_scores))
+    print() 
+    return regressor
+
+## CLASSFIERS
+
+# Evaluate KNN classifier
+print("Evaluate KNN classifier\n")
+knn_classifier_sbc = evaluate_classifier(KNeighborsClassifier(n_neighbors=5), single_bc, "tictac_single")
+knn_classifier_mbc = evaluate_classifier(KNeighborsClassifier(n_neighbors=5), multi_bc, "tictac_final")
+knn_classifier_fbc = evaluate_classifier(KNeighborsClassifier(n_neighbors=5), final_bc, "tictac_multi")
+print() 
+
+# Evaluate MLP classifier
+print("Evaluate MLP classifier\n") 
+knn_classifier_sbc = evaluate_classifier(MLPClassifier(max_iter=10000), single_bc, "tictac_single")
+knn_classifier_mbc = evaluate_classifier(MLPClassifier(max_iter=10000), multi_bc, "tictac_final")
+knn_classifier_fbc = evaluate_classifier(MLPClassifier(max_iter=10000), final_bc, "tictac_multi")
+print() 
+
+# Evaluate SVM classifier
+print("Evaluate SVM classifier\n")
+knn_classifier_sbc = evaluate_classifier(LinearSVC(dual=True), single_bc, "tictac_single")
+knn_classifier_mbc = evaluate_classifier(LinearSVC(dual=True), multi_bc, "tictac_final")
+knn_classifier_fbc = evaluate_classifier(LinearSVC(dual=True), final_bc, "tictac_multi")
+print() 
+
+## REGRESSORS
+print("Evaluate KNN regressor\n")
+knn_regressor = evaluate_regressor(KNeighborsRegressor(), multi_bc, "multi_bc")
+print("Evaluate Linear regressor\n")
+linear_regressor = evaluate_regressor(LinearRegression(), multi_bc, "multi_bc")
+print("Evaluate MLP regressor\n")
+mlp_regressor = evaluate_regressor(MLPRegressor(max_iter=10000), multi_bc, "multi_bc")
+print() 
 
 
-# Initialize the KNN classifier
-print("KNN classifier")
-knn_classifier = KNeighborsClassifier(n_neighbors=5)
-
-# Extract features (X) and labels (y)
-X = single_bc[:, :9]
-y = single_bc[:, 9]
-
-# Evaluate the classifier
-row, col = evaluate_classifier(knn_classifier, X, y)
-
-print(row)
-print(col)
-
-# print("SVM classifier")
-# # Initialize the Linear SVM classifier
-# svm_classifier = LinearSVC(dual=True)
-
-# # Extract features (X) and labels (y)
-# X = single_bc[:, :9]
-# y = single_bc[:, 9]
-
-# # Evaluate the classifier
-# evaluate_classifier(svm_classifier, X, y)
-
-# print("MLP classifier")
-# # Initialize the MLP classifier
-# mlp_classifier = MLPClassifier(max_iter=100000)
-
-# # Extract features (X) and labels (y)
-# X = single_bc[:, :9]
-# y = single_bc[:, 9]
-
-# # Evaluate the classifier
-# evaluate_classifier(mlp_classifier, X, y)
-
+# TODO:
+#COMMAND LINE BOARD GAME
