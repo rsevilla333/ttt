@@ -95,7 +95,7 @@ def print_board(board):
 
 
 def player_name(num):
-    if (-1):
+    if (num):
         return "X"
     return "O"
 
