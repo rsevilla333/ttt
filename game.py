@@ -47,9 +47,7 @@ def print_model_options():
     print("Available model options:")
     for index, filename in model_filenames.items():
         print(f"{index}: {filename}")
-    print("\nThe best model is 3: 'mlp_classifier_sbc'")
-
-
+    print("\nThe best model is 2: 'mlp_classifier_sbc'")
 
 
 def get_all_moves (curr_board):
@@ -133,7 +131,6 @@ def array_contains_zeros(arr):
     return True
     
     
-
 def tic_tac_toe_multi(model):
     gameOver = False
     while gameOver == False:
